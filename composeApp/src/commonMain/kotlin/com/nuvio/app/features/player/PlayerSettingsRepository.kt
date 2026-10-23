@@ -41,11 +41,12 @@ data class PlayerSettingsUiState(
     val resizeMode: PlayerResizeMode = PlayerResizeMode.Fit,
     val holdToSpeedEnabled: Boolean = true,
     val holdToSpeedValue: Float = 2f,
-    val skipBackwardSeconds: Int = PLAYER_SKIP_SECONDS_DEFAULT,
-    val skipForwardSeconds: Int = PLAYER_SKIP_SECONDS_DEFAULT,
+    val skipBackwardSeconds: Int = PLAYER_SKIP_BACKWARD_SECONDS_DEFAULT,
+    val skipForwardSeconds: Int = PLAYER_SKIP_FORWARD_SECONDS_DEFAULT,
     val touchGesturesEnabled: Boolean = true,
     val swipeToSeekEnabled: Boolean = true,
     val seekPreviewEnabled: Boolean = true,
+    val glassEffectEnabled: Boolean = true,
     val movieRecommendationsEnabled: Boolean = true,
     val autoShowSubtitlesOnRewindEnabled: Boolean = true,
     val autoShowSubtitlesOnMuteEnabled: Boolean = true,
@@ -134,11 +135,12 @@ object PlayerSettingsRepository {
     private var resizeMode = PlayerResizeMode.Fit
     private var holdToSpeedEnabled = true
     private var holdToSpeedValue = 2f
-    private var skipBackwardSeconds = PLAYER_SKIP_SECONDS_DEFAULT
-    private var skipForwardSeconds = PLAYER_SKIP_SECONDS_DEFAULT
+    private var skipBackwardSeconds = PLAYER_SKIP_BACKWARD_SECONDS_DEFAULT
+    private var skipForwardSeconds = PLAYER_SKIP_FORWARD_SECONDS_DEFAULT
     private var touchGesturesEnabled = true
     private var swipeToSeekEnabled = true
     private var seekPreviewEnabled = true
+    private var glassEffectEnabled = true
     private var movieRecommendationsEnabled = true
     private var autoShowSubtitlesOnRewindEnabled = true
     private var autoShowSubtitlesOnMuteEnabled = true
@@ -232,11 +234,12 @@ object PlayerSettingsRepository {
         resizeMode = PlayerResizeMode.Fit
         holdToSpeedEnabled = true
         holdToSpeedValue = 2f
-        skipBackwardSeconds = PLAYER_SKIP_SECONDS_DEFAULT
-        skipForwardSeconds = PLAYER_SKIP_SECONDS_DEFAULT
+        skipBackwardSeconds = PLAYER_SKIP_BACKWARD_SECONDS_DEFAULT
+        skipForwardSeconds = PLAYER_SKIP_FORWARD_SECONDS_DEFAULT
         touchGesturesEnabled = true
         swipeToSeekEnabled = true
         seekPreviewEnabled = true
+        glassEffectEnabled = true
         movieRecommendationsEnabled = true
         autoShowSubtitlesOnRewindEnabled = true
         autoShowSubtitlesOnMuteEnabled = true
@@ -325,11 +328,12 @@ object PlayerSettingsRepository {
             ?: PlayerResizeMode.Fit
         holdToSpeedEnabled = PlayerSettingsStorage.loadHoldToSpeedEnabled() ?: true
         holdToSpeedValue = PlayerSettingsStorage.loadHoldToSpeedValue() ?: 2f
-        skipBackwardSeconds = normalizePlayerSkipSeconds(PlayerSettingsStorage.loadSkipBackwardSeconds())
-        skipForwardSeconds = normalizePlayerSkipSeconds(PlayerSettingsStorage.loadSkipForwardSeconds())
+        skipBackwardSeconds = normalizePlayerSkipSeconds(PlayerSettingsStorage.loadSkipBackwardSeconds(), PLAYER_SKIP_BACKWARD_SECONDS_DEFAULT)
+        skipForwardSeconds = normalizePlayerSkipSeconds(PlayerSettingsStorage.loadSkipForwardSeconds(), PLAYER_SKIP_FORWARD_SECONDS_DEFAULT)
         touchGesturesEnabled = PlayerSettingsStorage.loadTouchGesturesEnabled() ?: true
         swipeToSeekEnabled = PlayerSettingsStorage.loadSwipeToSeekEnabled() ?: true
         seekPreviewEnabled = PlayerSettingsStorage.loadSeekPreviewEnabled() ?: true
+        glassEffectEnabled = PlayerSettingsStorage.loadGlassEffectEnabled() ?: true
         movieRecommendationsEnabled = PlayerSettingsStorage.loadMovieRecommendationsEnabled() ?: true
         autoShowSubtitlesOnRewindEnabled = PlayerSettingsStorage.loadAutoShowSubtitlesOnRewindEnabled() ?: true
         autoShowSubtitlesOnMuteEnabled = PlayerSettingsStorage.loadAutoShowSubtitlesOnMuteEnabled() ?: true
@@ -551,7 +555,7 @@ object PlayerSettingsRepository {
 
     fun setSkipBackwardSeconds(seconds: Int) {
         ensureLoaded()
-        val normalized = normalizePlayerSkipSeconds(seconds)
+        val normalized = normalizePlayerSkipSeconds(seconds, PLAYER_SKIP_BACKWARD_SECONDS_DEFAULT)
         if (skipBackwardSeconds == normalized) return
         skipBackwardSeconds = normalized
         publish()
@@ -560,7 +564,7 @@ object PlayerSettingsRepository {
 
     fun setSkipForwardSeconds(seconds: Int) {
         ensureLoaded()
-        val normalized = normalizePlayerSkipSeconds(seconds)
+        val normalized = normalizePlayerSkipSeconds(seconds, PLAYER_SKIP_FORWARD_SECONDS_DEFAULT)
         if (skipForwardSeconds == normalized) return
         skipForwardSeconds = normalized
         publish()
@@ -589,6 +593,14 @@ object PlayerSettingsRepository {
         seekPreviewEnabled = enabled
         publish()
         PlayerSettingsStorage.saveSeekPreviewEnabled(enabled)
+    }
+
+    fun setGlassEffectEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (glassEffectEnabled == enabled) return
+        glassEffectEnabled = enabled
+        publish()
+        PlayerSettingsStorage.saveGlassEffectEnabled(enabled)
     }
 
     fun setMovieRecommendationsEnabled(enabled: Boolean) {
@@ -1268,6 +1280,7 @@ object PlayerSettingsRepository {
             touchGesturesEnabled = touchGesturesEnabled,
             swipeToSeekEnabled = swipeToSeekEnabled,
             seekPreviewEnabled = seekPreviewEnabled,
+            glassEffectEnabled = glassEffectEnabled,
             movieRecommendationsEnabled = movieRecommendationsEnabled,
             autoShowSubtitlesOnRewindEnabled = autoShowSubtitlesOnRewindEnabled,
             autoShowSubtitlesOnMuteEnabled = autoShowSubtitlesOnMuteEnabled,
@@ -1353,8 +1366,10 @@ object PlayerSettingsRepository {
     }
 }
 
-val PlayerSkipSecondsOptions = listOf(5, 10, 15, 30)
+val PlayerSkipSecondsOptions = listOf(5, 10, 20, 30)
 const val PLAYER_SKIP_SECONDS_DEFAULT = 10
+const val PLAYER_SKIP_BACKWARD_SECONDS_DEFAULT = 5
+const val PLAYER_SKIP_FORWARD_SECONDS_DEFAULT = 10
 
-internal fun normalizePlayerSkipSeconds(seconds: Int?): Int =
-    seconds?.takeIf { it in PlayerSkipSecondsOptions } ?: PLAYER_SKIP_SECONDS_DEFAULT
+internal fun normalizePlayerSkipSeconds(seconds: Int?, default: Int = PLAYER_SKIP_SECONDS_DEFAULT): Int =
+    seconds?.takeIf { it in PlayerSkipSecondsOptions } ?: default

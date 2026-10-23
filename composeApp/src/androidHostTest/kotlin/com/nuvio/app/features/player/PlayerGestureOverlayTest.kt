@@ -223,7 +223,7 @@ class PlayerGestureOverlayTest {
         compose.onNodeWithText("+20s").assertIsDisplayed()
 
         compose.runOnIdle { runtime.handleDoubleTapSeek(PlayerSeekDirection.Backward) }
-        compose.onNodeWithText("-10s").assertIsDisplayed()
+        compose.onNodeWithText("-5s").assertIsDisplayed()
     }
 
     @Test

@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,12 +21,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Groups
@@ -42,6 +47,7 @@ import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.material.icons.rounded.Replay30
@@ -59,20 +65,15 @@ import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -89,7 +90,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.LayoutDirection
 import com.nuvio.app.core.ui.AppIconResource
 import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.core.ui.themePalette
@@ -123,7 +123,7 @@ internal fun PlayerControlsShell(
     useLegacyLayout: Boolean = false,
     showRemainingTime: Boolean = false,
     onRuntimeClick: () -> Unit = {},
-    releaseInfo: String? = null,
+    qualityChips: List<String> = emptyList(),
     badges: List<StreamBadge> = emptyList(),
     hideDetails: Boolean = false,
     onNextEpisodeClick: (() -> Unit)? = null,
@@ -174,16 +174,8 @@ internal fun PlayerControlsShell(
     seekPreview: SeekPreviewController? = null,
     onTimelineTouchChange: (Boolean) -> Unit = {},
 ) {
-    val density = LocalDensity.current
-    var timelineHeight by remember { mutableStateOf(0.dp) }
     val glassActive = isAmbientLiquidGlassActive()
-    var sourceLineHeight by remember { mutableStateOf(0.dp) }
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val centerControlHeight = metrics.playIconSize + maxOf(metrics.playButtonPadding, metrics.sideButtonPadding) * 2
-        val centerBottomPadding = if (useLegacyLayout) metrics.centerLift else maxOf(
-            metrics.centerLift,
-            (timelineHeight - sourceLineHeight) * 2 + centerControlHeight + 16.dp - maxHeight,
-        )
+    Box(modifier = modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -288,32 +280,35 @@ internal fun PlayerControlsShell(
                 )
             }
 
-            if (showPlaybackControls) {
-                CompositionLocalProvider(
-                    LocalLayoutDirection provides if (useLegacyLayout) LocalLayoutDirection.current else LayoutDirection.Ltr,
-                ) {
-                    CenterControls(
-                        snapshot = playbackSnapshot,
-                        metrics = metrics,
-                        skipBackwardSeconds = skipBackwardSeconds,
-                        skipForwardSeconds = skipForwardSeconds,
-                        onSeekBack = {
-                            if (!useLegacyLayout) onInteraction()
-                            onSeekBack()
-                        },
-                        onSeekForward = {
-                            if (!useLegacyLayout) onInteraction()
-                            onSeekForward()
-                        },
-                        onTogglePlayback = {
-                            if (!useLegacyLayout) onInteraction()
-                            onTogglePlayback()
-                        },
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(bottom = centerBottomPadding),
-                    )
-                }
+            // The modern layout has no center overlay: play/pause lives in the bottom bar and
+            // double-tapping the middle of the video toggles playback.
+            if (showPlaybackControls && useLegacyLayout) {
+                CenterControls(
+                    snapshot = playbackSnapshot,
+                    metrics = metrics,
+                    skipBackwardSeconds = skipBackwardSeconds,
+                    skipForwardSeconds = skipForwardSeconds,
+                    onSeekBack = onSeekBack,
+                    onSeekForward = onSeekForward,
+                    onTogglePlayback = onTogglePlayback,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(bottom = metrics.centerLift),
+                )
+            }
+
+            if (showPlaybackControls && !useLegacyLayout && onSpeedClick != null) {
+                PlayerSpeedRail(
+                    speed = playbackSnapshot.playbackSpeed,
+                    onSpeedSelected = { speed ->
+                        onInteraction()
+                        onSpeedSelected(speed)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
+                        .padding(horizontal = metrics.horizontalPadding),
+                )
             }
 
             if (showPlaybackControls && useLegacyLayout) {
@@ -351,7 +346,6 @@ internal fun PlayerControlsShell(
             if (showPlaybackControls && !useLegacyLayout) {
                 Column(
                     modifier = Modifier
-                        .onSizeChanged { size -> timelineHeight = with(density) { size.height.toDp() } }
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .windowInsetsPadding(playerTimelineBottomInsets(metrics))
@@ -363,15 +357,13 @@ internal fun PlayerControlsShell(
                             seasonNumber = seasonNumber,
                             episodeNumber = episodeNumber,
                             episodeTitle = episodeTitle,
-                            releaseInfo = releaseInfo,
                             streamTitle = streamTitle,
                             providerName = providerName,
-                            isPlaying = playbackSnapshot.isPlaying,
+                            // Only an explicit pause shows the metadata chips, not a buffering stall.
+                            showMetadata = !playbackSnapshot.isPlaying && !playbackSnapshot.isLoading,
                             metrics = metrics,
+                            qualityChips = qualityChips,
                             badges = badges,
-                            onSourceLineHeightChanged = { height ->
-                                sourceLineHeight = with(density) { height.toDp() }
-                            },
                         )
                     }
                     Row(
@@ -423,10 +415,7 @@ internal fun PlayerControlsShell(
                         onEpisodesClick = onEpisodesClick,
                         onChaptersClick = onChaptersClick,
                         onNextEpisodeClick = onNextEpisodeClick,
-                        onSpeedClick = { onSpeedClick?.invoke() },
-                        speedPickerVisible = speedPickerVisible,
-                        onSpeedSelected = onSpeedSelected,
-                        onSpeedPickerDismiss = onSpeedPickerDismiss,
+                        onTogglePlayback = onTogglePlayback,
                         onResizeModeClick = onResizeModeClick,
                         onVideoSettingsClick = onVideoSettingsClick,
                         onOpenInExternalPlayer = onOpenInExternalPlayer,
@@ -749,6 +738,87 @@ private fun CenterControls(
             onClick = onSeekForward,
         ) { SkipStepIcon(seconds = skipForwardSeconds, forward = true, size = metrics.playIconSize) }
     }
+}
+
+/** Vertical +/speed/- rail on the middle-left edge; tapping the value resets to 1.0x. */
+@Composable
+private fun PlayerSpeedRail(
+    speed: Float,
+    onSpeedSelected: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val faster = PlayerPlaybackSpeedOptions.firstOrNull { it > speed + 0.01f }
+    val slower = PlayerPlaybackSpeedOptions.lastOrNull { it < speed - 0.01f }
+    Column(
+        modifier = modifier
+            .width(48.dp)
+            .playerLiquidGlass(
+                shape = PlayerGlassCapsule,
+                refractionHeight = 8.dp,
+                refractionAmount = 12.dp,
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        PlayerSpeedRailButton(
+            icon = Icons.Rounded.Add,
+            contentDescription = stringResource(Res.string.compose_player_speed_increase),
+            enabled = faster != null,
+            onClick = { faster?.let(onSpeedSelected) },
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = stringResource(Res.string.compose_player_speed),
+                    onClick = { onSpeedSelected(1f) },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = formatPlayerSpeedRailLabel(speed),
+                style = MaterialTheme.nuvioTypeScale.labelSm.copy(fontWeight = FontWeight.SemiBold),
+                color = Color.White,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+        PlayerSpeedRailButton(
+            icon = Icons.Rounded.Remove,
+            contentDescription = stringResource(Res.string.compose_player_speed_decrease),
+            enabled = slower != null,
+            onClick = { slower?.let(onSpeedSelected) },
+        )
+    }
+}
+
+@Composable
+private fun PlayerSpeedRailButton(
+    icon: ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = Color.White.copy(alpha = if (enabled) 1f else 0.35f),
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+/** Always shows one decimal ("1.0x", "1.25x") to match the compact rail label. */
+internal fun formatPlayerSpeedRailLabel(speed: Float): String {
+    val label = formatPlaybackSpeedLabel(speed)
+    return if (label.contains('.')) label else label.replace("x", ".0x")
 }
 
 @Composable

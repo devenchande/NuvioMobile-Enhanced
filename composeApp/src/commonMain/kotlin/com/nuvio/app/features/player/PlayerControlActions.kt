@@ -1,5 +1,6 @@
 package com.nuvio.app.features.player
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +34,6 @@ import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.StayCurrentLandscape
 import androidx.compose.material.icons.rounded.StayCurrentPortrait
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.SwapHoriz
@@ -50,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.AppIconResource
 import com.nuvio.app.core.ui.NuvioBackButton
+import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.appIconPainter
 import com.nuvio.app.core.ui.nuvioTypeScale
 import nuvio.composeapp.generated.resources.*
@@ -165,10 +167,7 @@ internal fun PlayerControlActions(
     onEpisodesClick: (() -> Unit)?,
     onChaptersClick: (() -> Unit)? = null,
     onNextEpisodeClick: (() -> Unit)?,
-    onSpeedClick: () -> Unit,
-    speedPickerVisible: Boolean = false,
-    onSpeedSelected: (Float) -> Unit = {},
-    onSpeedPickerDismiss: () -> Unit = {},
+    onTogglePlayback: () -> Unit,
     onResizeModeClick: () -> Unit,
     onVideoSettingsClick: (() -> Unit)?,
     onOpenInExternalPlayer: (() -> Unit)?,
@@ -189,18 +188,6 @@ internal fun PlayerControlActions(
                 icon = Icons.Rounded.SkipNext, iconSize = 40.dp,
             )
         },
-        PlayerControlAction(
-            "${stringResource(Res.string.compose_player_speed)} ${formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed)}",
-            onSpeedClick, icon = Icons.Rounded.Speed,
-            popup = {
-                PlayerSpeedPopup(
-                    visible = speedPickerVisible,
-                    currentSpeed = playbackSnapshot.playbackSpeed,
-                    onSpeedSelected = onSpeedSelected,
-                    onDismiss = onSpeedPickerDismiss,
-                )
-            },
-        ),
         PlayerControlAction(
             stringResource(resizeMode.labelRes), onResizeModeClick,
             painter = appIconPainter(AppIconResource.PlayerAspectRatio),
@@ -296,6 +283,14 @@ internal fun PlayerControlActions(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            PlayerBarPlayPauseButton(
+                isPlaying = playbackSnapshot.isPlaying,
+                isBuffering = playbackSnapshot.isLoading,
+                onClick = {
+                    onInteraction()
+                    onTogglePlayback()
+                },
+            )
             Box(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier
@@ -308,19 +303,16 @@ internal fun PlayerControlActions(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     (if (expanded) primaryActions + secondaryActions else primaryActions).forEach { action ->
-                        Box {
-                            PlayerAction(
-                                description = action.description,
-                                onClick = {
-                                    onInteraction()
-                                    action.onClick()
-                                },
-                                icon = action.icon,
-                                painter = action.painter,
-                                iconSize = action.iconSize,
-                            )
-                            action.popup?.invoke()
-                        }
+                        PlayerAction(
+                            description = action.description,
+                            onClick = {
+                                onInteraction()
+                                action.onClick()
+                            },
+                            icon = action.icon,
+                            painter = action.painter,
+                            iconSize = action.iconSize,
+                        )
                     }
                     if (hasOverflow) {
                         PlayerAction(
@@ -369,6 +361,35 @@ internal fun PlayerControlActions(
     }
 }
 
+/** Large solid play/pause at the start of the bottom bar; solid white so it reads over any frame. */
+@Composable
+private fun PlayerBarPlayPauseButton(
+    isPlaying: Boolean,
+    isBuffering: Boolean,
+    onClick: () -> Unit,
+) {
+    val description = stringResource(if (isPlaying) Res.string.compose_action_pause else Res.string.detail_btn_play)
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .clip(CircleShape)
+            .background(Color.White)
+            .clickable(role = Role.Button, onClickLabel = description, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isBuffering) {
+            NuvioLoadingIndicator(modifier = Modifier.size(26.dp))
+        } else {
+            Icon(
+                painter = appIconPainter(if (isPlaying) AppIconResource.PlayerPause else AppIconResource.PlayerPlay),
+                contentDescription = description,
+                tint = Color.Black,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+    }
+}
+
 @Composable
 private fun PlayerAction(
     description: String,
@@ -395,5 +416,4 @@ private data class PlayerControlAction(
     val icon: ImageVector? = null,
     val painter: Painter? = null,
     val iconSize: Dp = 24.dp,
-    val popup: (@Composable () -> Unit)? = null,
 )

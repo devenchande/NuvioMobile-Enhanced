@@ -1,16 +1,23 @@
 package com.nuvio.app.features.player
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -62,13 +68,12 @@ internal fun PlayerTimelineDetails(
     seasonNumber: Int?,
     episodeNumber: Int?,
     episodeTitle: String?,
-    releaseInfo: String?,
     streamTitle: String,
     providerName: String,
-    isPlaying: Boolean,
+    showMetadata: Boolean,
     metrics: PlayerLayoutMetrics,
+    qualityChips: List<String> = emptyList(),
     badges: List<StreamBadge> = emptyList(),
-    onSourceLineHeightChanged: (Int) -> Unit = {},
 ) {
     val typeScale = MaterialTheme.nuvioTypeScale
     Column(Modifier.padding(horizontal = PlayerTimelineContentInset)) {
@@ -94,31 +99,30 @@ internal fun PlayerTimelineDetails(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        if (badges.isNotEmpty()) {
-            PlayerBadges(badges = badges, modifier = Modifier.padding(vertical = 4.dp))
-        }
-        if (!releaseInfo.isNullOrBlank()) {
-            Text(
-                text = releaseInfo,
-                style = typeScale.labelSm.copy(fontSize = metrics.metadataSize),
-                color = Color.White.copy(alpha = 0.68f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        // Quality/audio/source chips only while paused; during playback the row collapses to save space.
         val source = streamTitle.ifBlank { providerName }.replace("\n", " · ")
-        if (!isPlaying && source.isNotBlank()) {
-            DisposableEffect(Unit) {
-                onDispose { onSourceLineHeightChanged(0) }
+        val sourceChip = source.takeIf { it.isNotBlank() }?.let { stringResource(Res.string.compose_player_via, it) }
+        AnimatedVisibility(
+            visible = showMetadata && (badges.isNotEmpty() || qualityChips.isNotEmpty() || sourceChip != null),
+            enter = fadeIn(tween(220)) + expandVertically(tween(220)),
+            exit = fadeOut(tween(160)) + shrinkVertically(tween(160)),
+        ) {
+            Row(
+                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // User-configured image badges take the place of the generated quality chips.
+                if (badges.isNotEmpty()) {
+                    PlayerBadges(badges = badges, modifier = Modifier.weight(1f, fill = false))
+                    sourceChip?.let { PlayerQualityChipRow(labels = listOf(it), fontSize = metrics.metadataSize) }
+                } else {
+                    PlayerQualityChipRow(
+                        labels = qualityChips + listOfNotNull(sourceChip),
+                        fontSize = metrics.metadataSize,
+                    )
+                }
             }
-            Text(
-                text = stringResource(Res.string.compose_player_via, source),
-                style = typeScale.labelSm.copy(fontSize = metrics.metadataSize),
-                color = Color.White.copy(alpha = 0.68f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.onSizeChanged { onSourceLineHeightChanged(it.height) },
-            )
         }
     }
 }

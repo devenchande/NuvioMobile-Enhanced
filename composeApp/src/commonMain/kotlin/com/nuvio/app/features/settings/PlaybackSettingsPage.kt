@@ -524,6 +524,15 @@ private fun PlaybackSettingsSection(
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_playback_glass_effect),
+                    description = stringResource(Res.string.settings_playback_glass_effect_description),
+                    checked = autoPlayPlayerSettings.glassEffectEnabled,
+                    enabled = !autoPlayPlayerSettings.externalPlayerEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = PlayerSettingsRepository::setGlassEffectEnabled,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
                     title = stringResource(Res.string.settings_playback_touch_gestures),
                     description = stringResource(Res.string.settings_playback_touch_gestures_description),
                     checked = touchGesturesEnabled,

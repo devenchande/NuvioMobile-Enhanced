@@ -432,6 +432,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(isEpisode: Boolean) {
     val partyState by PartyRepository.state.collectAsStateWithLifecycle()
     val partyActive = partyState.party != null
     val playerBadges = rememberPlayerBadges()
+    val playerQualityChips = rememberPlayerQualityChips()
     AnimatedVisibility(
         visible = (controlsVisible || showParentalGuide) && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
@@ -461,7 +462,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(isEpisode: Boolean) {
             useLegacyLayout = playerSettingsUiState.useLegacyPlayerLayout,
             showRemainingTime = showRemainingTime,
             onRuntimeClick = { showRemainingTime = !showRemainingTime },
-            releaseInfo = metaUiState.meta?.takeIf { it.id == parentMetaId }?.releaseInfo,
+            qualityChips = playerQualityChips,
             badges = playerBadges,
             hideDetails = activeSkipInterval != null && !skipIntervalDismissed,
             onNextEpisodeClick = if (nextEpisodeInfo?.hasAired == true && !nextEpisodeAutoPlaySearching && nextEpisodeAutoPlayCountdown == null) {

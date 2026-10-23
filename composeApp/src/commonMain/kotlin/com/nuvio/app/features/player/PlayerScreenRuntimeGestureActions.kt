@@ -404,7 +404,8 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
             offset.x > layoutSize.width * PlayerRightGestureBoundary -> {
                 handleDoubleTapSeek(PlayerSeekDirection.Forward)
             }
-            else -> controlsVisible = !controlsVisible
+            // Center double-tap toggles playback; the on-screen center buttons were removed.
+            else -> togglePlayback()
         }
     }
     return PlayerSurfaceGestureCallbacks(
