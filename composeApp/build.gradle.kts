@@ -325,7 +325,11 @@ if (runtimeConfigValue("NUVIO_SUPABASE_URL").isBlank() || runtimeConfigValue("NU
 
 val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generateRuntimeConfigs") {
     outputDir.set(generatedRuntimeConfigDir)
-    localPropertiesFile.set(rootProject.layout.projectDirectory.file("local.properties"))
+    // The input is optional: CI builds without the properties secret have no local.properties,
+    // and Gradle rejects an @InputFile that points at a missing file.
+    rootProject.file("local.properties").takeIf { it.exists() }?.let { file ->
+        localPropertiesFile.set(file)
+    }
     appVersionName.set(releaseAppVersionName)
     appVersionCode.set(releaseAppVersionCode)
     supabaseUrl.set(runtimeConfigValue("NUVIO_SUPABASE_URL"))
