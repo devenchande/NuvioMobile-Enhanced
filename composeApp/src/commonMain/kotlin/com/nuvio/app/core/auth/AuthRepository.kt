@@ -1,6 +1,7 @@
 package com.nuvio.app.core.auth
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.core.network.ServerConfigurationRepository
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.core.storage.LocalAccountDataCleaner
 import io.github.jan.supabase.auth.auth
@@ -49,6 +50,14 @@ object AuthRepository {
                 email = null,
                 isAnonymous = true,
             )
+        }
+
+        if (!isBackendConfigured()) {
+            // No backend in this build: stay signed out (or anonymous) instead of creating a client
+            // with an empty URL, which fails on first use.
+            log.w { "Account backend is not configured for this build; skipping session restore" }
+            if (savedAnonId == null) _state.value = AuthState.Unauthenticated
+            return
         }
 
         sessionStatusJob = scope.launch {
@@ -119,6 +128,7 @@ object AuthRepository {
 
     suspend fun signUpWithEmail(email: String, password: String): Result<Unit> = runCatching {
         _error.value = null
+        requireBackendConfigured()
         SupabaseProvider.client.auth.signUpWith(Email) {
             this.email = email
             this.password = password
@@ -127,12 +137,14 @@ object AuthRepository {
         Unit
     }.onFailure { e ->
         log.e(e) { "Email sign-up failed" }
-        _error.value = e.safeAuthErrorDescription()
+        _error.value = e.backendNotConfiguredMessage()
+            ?: e.safeAuthErrorDescription()
             ?: getString(Res.string.auth_sign_up_failed)
     }
 
     suspend fun signInWithEmail(email: String, password: String): Result<Unit> = runCatching {
         _error.value = null
+        requireBackendConfigured()
         SupabaseProvider.client.auth.signInWith(Email) {
             this.email = email
             this.password = password
@@ -140,7 +152,8 @@ object AuthRepository {
         trustNextSessionWithoutValidation = true
     }.onFailure { e ->
         log.e(e) { "Email sign-in failed" }
-        _error.value = e.safeAuthErrorDescription()
+        _error.value = e.backendNotConfiguredMessage()
+            ?: e.safeAuthErrorDescription()
             ?: getString(Res.string.auth_sign_in_failed)
     }
 
@@ -276,6 +289,18 @@ object AuthRepository {
                 ("auth.users" in message || "user_id" in message)
             )
     }
+
+    fun isBackendConfigured(): Boolean = ServerConfigurationRepository.active.value.isConfigured
+
+    private fun requireBackendConfigured() {
+        if (!isBackendConfigured()) throw BackendNotConfiguredException()
+    }
+
+    private suspend fun Throwable.backendNotConfiguredMessage(): String? =
+        if (this is BackendNotConfiguredException) getString(Res.string.auth_backend_not_configured) else null
+
+    private class BackendNotConfiguredException :
+        IllegalStateException("Account backend URL/key missing from this build")
 
     private inline fun <reified T : Throwable> Throwable.findCause(): T? {
         var current: Throwable? = this

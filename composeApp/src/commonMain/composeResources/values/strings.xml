@@ -1991,6 +1991,7 @@
     <string name="app_brand_name">Nuvio</string>
     <string name="auth_account_deletion_failed">Account deletion failed</string>
     <string name="auth_sign_in_failed">Sign-in failed</string>
+    <string name="auth_backend_not_configured">Accounts aren't available in this build because no sync server is configured. You can continue without an account, or connect your own server.</string>
     <string name="auth_sign_out_failed">Sign-out failed</string>
     <string name="auth_sign_up_failed">Sign-up failed</string>
     <string name="catalog_load_failed">Unable to load catalog items.</string>

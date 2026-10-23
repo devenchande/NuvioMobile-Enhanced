@@ -186,6 +186,19 @@ cd NuvioMobile-Enhanced
 git checkout enhanced
 ```
 
+### Account sync server
+
+Sign-in and sync need a Supabase backend. The URL and key are read at build time from `local.properties`
+(git-ignored) or environment variables of the same name:
+
+```properties
+NUVIO_SUPABASE_URL=https://<your-project>.supabase.co
+NUVIO_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+Without them the app still builds and plays content, but account sign-in is disabled and the sign-in
+screen says so. Use your own backend; don't reuse keys extracted from official Nuvio builds.
+
 ### Android
 
 Requires Android Studio and the Android SDK.

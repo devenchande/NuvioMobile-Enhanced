@@ -316,6 +316,13 @@ fun runtimeConfigBoolean(key: String, default: Boolean): Boolean =
         else -> default
     }
 
+if (runtimeConfigValue("NUVIO_SUPABASE_URL").isBlank() || runtimeConfigValue("NUVIO_SUPABASE_ANON_KEY").isBlank()) {
+    logger.warn(
+        "w: NUVIO_SUPABASE_URL / NUVIO_SUPABASE_ANON_KEY are not set (local.properties or environment). " +
+            "This build will have account sign-in disabled.",
+    )
+}
+
 val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generateRuntimeConfigs") {
     outputDir.set(generatedRuntimeConfigDir)
     localPropertiesFile.set(rootProject.layout.projectDirectory.file("local.properties"))
