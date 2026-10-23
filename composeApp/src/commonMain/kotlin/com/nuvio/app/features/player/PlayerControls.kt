@@ -22,10 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -213,8 +209,11 @@ internal fun PlayerControlsShell(
                 ),
         )
 
+        // Keep controls inside the display's safe area instead of running edge to edge.
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = horizontalSafePadding),
         ) {
             if (useLegacyLayout) {
                 PlayerHeader(
@@ -280,8 +279,21 @@ internal fun PlayerControlsShell(
                 )
             }
 
-            // The modern layout has no center overlay: play/pause lives in the bottom bar and
-            // double-tapping the middle of the video toggles playback.
+            // Modern layout: a plain play/pause glyph in the center, no skip buttons. Double-tapping
+            // the middle of the video also toggles playback.
+            if (showPlaybackControls && !useLegacyLayout) {
+                PlainPlayPauseButton(
+                    isPlaying = playbackSnapshot.isPlaying,
+                    isBuffering = playbackSnapshot.isLoading,
+                    iconSize = metrics.playIconSize,
+                    onClick = {
+                        onInteraction()
+                        onTogglePlayback()
+                    },
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+
             if (showPlaybackControls && useLegacyLayout) {
                 CenterControls(
                     snapshot = playbackSnapshot,
@@ -306,7 +318,6 @@ internal fun PlayerControlsShell(
                     },
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
                         .padding(horizontal = metrics.horizontalPadding),
                 )
             }
@@ -415,7 +426,6 @@ internal fun PlayerControlsShell(
                         onEpisodesClick = onEpisodesClick,
                         onChaptersClick = onChaptersClick,
                         onNextEpisodeClick = onNextEpisodeClick,
-                        onTogglePlayback = onTogglePlayback,
                         onResizeModeClick = onResizeModeClick,
                         onVideoSettingsClick = onVideoSettingsClick,
                         onOpenInExternalPlayer = onOpenInExternalPlayer,
@@ -737,6 +747,41 @@ private fun CenterControls(
             metrics = metrics,
             onClick = onSeekForward,
         ) { SkipStepIcon(seconds = skipForwardSeconds, forward = true, size = metrics.playIconSize) }
+    }
+}
+
+/** Bare play/pause glyph: no backing circle and no press ripple, like the original Nuvio player. */
+@Composable
+private fun PlainPlayPauseButton(
+    isPlaying: Boolean,
+    isBuffering: Boolean,
+    iconSize: Dp,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val description = stringResource(if (isPlaying) Res.string.compose_action_pause else Res.string.detail_btn_play)
+    Box(
+        modifier = modifier
+            .size(iconSize + 24.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.Button,
+                onClickLabel = description,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isBuffering) {
+            NuvioLoadingIndicator(modifier = Modifier.size(iconSize))
+        } else {
+            Icon(
+                painter = appIconPainter(if (isPlaying) AppIconResource.PlayerPause else AppIconResource.PlayerPlay),
+                contentDescription = description,
+                tint = Color.White,
+                modifier = Modifier.size(iconSize),
+            )
+        }
     }
 }
 

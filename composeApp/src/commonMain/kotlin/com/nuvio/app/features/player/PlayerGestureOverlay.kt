@@ -113,7 +113,8 @@ private fun PlayerGestureFeedback(
                     val reading = feedback.messageArgs.firstOrNull()?.toString() ?: percent.toString()
                     Column(
                         modifier = Modifier
-                            .align(if (isBrightness) Alignment.CenterEnd else Alignment.CenterStart)
+                            // Same side as the swipe: brightness on the left, volume on the right.
+                            .align(if (isBrightness) Alignment.CenterStart else Alignment.CenterEnd)
                             .padding(horizontal = horizontalSafePadding + 8.dp)
                             .width(6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,

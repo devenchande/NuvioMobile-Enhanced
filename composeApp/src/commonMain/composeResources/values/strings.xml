@@ -1288,7 +1288,7 @@
     <string name="settings_playback_seek_preview">Seek Bar Thumbnails</string>
     <string name="settings_playback_seek_preview_description">Show a preview frame above the seek bar while you drag it. Frames are fetched from the stream only while you scrub.</string>
     <string name="settings_playback_glass_effect">Glass Effect on Player Controls</string>
-    <string name="settings_playback_glass_effect_description">Blur the video behind player buttons for a translucent look. Turn off to use a plain dark backing that stays readable over bright scenes.</string>
+    <string name="settings_playback_glass_effect_description">Blur the video behind the speed control and player panels for a translucent look. Turn off to use a plain dark backing that stays readable over bright scenes.</string>
     <string name="settings_playback_touch_gestures">Touch Gestures</string>
     <string name="settings_playback_touch_gestures_description">Allow swipes and double-taps on the player surface to seek, adjust brightness, or adjust volume.</string>
     <string name="settings_playback_swipe_to_seek">Swipe to Seek</string>
