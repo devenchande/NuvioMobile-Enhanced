@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.StayCurrentLandscape
 import androidx.compose.material.icons.rounded.StayCurrentPortrait
 import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.SwapHoriz
@@ -140,8 +141,6 @@ internal fun PlayerToolbar(
     }
 }
 
-private const val ShowUpstreamStreamInfoAction = false
-
 @Composable
 internal fun PlayerControlActions(
     playbackSnapshot: PlayerPlaybackSnapshot,
@@ -156,6 +155,10 @@ internal fun PlayerControlActions(
     onEpisodesClick: (() -> Unit)?,
     onChaptersClick: (() -> Unit)? = null,
     onNextEpisodeClick: (() -> Unit)?,
+    onSpeedClick: (() -> Unit)?,
+    speedPickerVisible: Boolean = false,
+    onSpeedSelected: (Float) -> Unit = {},
+    onSpeedPickerDismiss: () -> Unit = {},
     onResizeModeClick: () -> Unit,
     onVideoSettingsClick: (() -> Unit)?,
     onOpenInExternalPlayer: (() -> Unit)?,
@@ -167,98 +170,137 @@ internal fun PlayerControlActions(
     onInfoClick: (() -> Unit)? = null,
     onRateClick: (() -> Unit)? = null,
     userRating: Int? = null,
+    actionOrder: List<PlayerBarAction> = PlayerBarAction.defaultOrder,
+    alwaysExpanded: Boolean = false,
     onInteraction: () -> Unit,
 ) {
-    val primaryActions = listOfNotNull(
-        PlayerControlAction(
-            stringResource(Res.string.compose_player_subtitles), onSubtitleClick,
-            painter = appIconPainter(AppIconResource.PlayerSubtitles),
-        ),
-        PlayerControlAction(
-            stringResource(Res.string.compose_player_audio), onAudioClick,
-            painter = appIconPainter(AppIconResource.PlayerAudioFilled),
-        ),
+    // Every action available for this stream, keyed so the user's saved order can arrange them.
+    val available: Map<PlayerBarAction, PlayerControlAction> = buildMap {
+        put(
+            PlayerBarAction.Subtitles,
+            PlayerControlAction(
+                stringResource(Res.string.compose_player_subtitles), onSubtitleClick,
+                painter = appIconPainter(AppIconResource.PlayerSubtitles),
+            ),
+        )
+        put(
+            PlayerBarAction.Audio,
+            PlayerControlAction(
+                stringResource(Res.string.compose_player_audio), onAudioClick,
+                painter = appIconPainter(AppIconResource.PlayerAudioFilled),
+            ),
+        )
         onSourcesClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.compose_player_sources), it,
-                painter = appIconPainter(AppIconResource.PlayerSource),
+            put(
+                PlayerBarAction.Sources,
+                PlayerControlAction(
+                    stringResource(Res.string.compose_player_sources), it,
+                    painter = appIconPainter(AppIconResource.PlayerSource),
+                ),
             )
-        },
-    )
-    val secondaryActions = listOfNotNull(
+        }
+        onSpeedClick?.let {
+            put(
+                PlayerBarAction.Speed,
+                PlayerControlAction(
+                    "${stringResource(Res.string.compose_player_speed)} ${formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed)}",
+                    it, icon = Icons.Rounded.Speed,
+                    popup = {
+                        PlayerSpeedPopup(
+                            visible = speedPickerVisible,
+                            currentSpeed = playbackSnapshot.playbackSpeed,
+                            onSpeedSelected = onSpeedSelected,
+                            onDismiss = onSpeedPickerDismiss,
+                        )
+                    },
+                ),
+            )
+        }
         onNextEpisodeClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.player_next_episode), it,
-                icon = Icons.Rounded.SkipNext,
+            put(
+                PlayerBarAction.NextEpisode,
+                PlayerControlAction(stringResource(Res.string.player_next_episode), it, icon = Icons.Rounded.SkipNext),
             )
-        },
-        PlayerControlAction(
-            stringResource(resizeMode.labelRes), onResizeModeClick,
-            painter = appIconPainter(AppIconResource.PlayerAspectRatio),
-        ),
+        }
+        put(
+            PlayerBarAction.AspectRatio,
+            PlayerControlAction(
+                stringResource(resizeMode.labelRes), onResizeModeClick,
+                painter = appIconPainter(AppIconResource.PlayerAspectRatio),
+            ),
+        )
         onChaptersClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.player_chapters), it,
-                icon = Icons.AutoMirrored.Rounded.ListAlt,
+            put(
+                PlayerBarAction.Chapters,
+                PlayerControlAction(stringResource(Res.string.player_chapters), it, icon = Icons.AutoMirrored.Rounded.ListAlt),
             )
-        },
+        }
         onQualityClick?.let {
-            PlayerControlAction(
-                qualityLabel?.takeIf { label -> label.isNotBlank() } ?: "Quality", it,
-                icon = Icons.Rounded.HighQuality,
+            put(
+                PlayerBarAction.Quality,
+                PlayerControlAction(
+                    qualityLabel?.takeIf { label -> label.isNotBlank() } ?: "Quality", it,
+                    icon = Icons.Rounded.HighQuality,
+                ),
             )
-        },
+        }
         onEpisodesClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.compose_player_episodes), it,
-                painter = appIconPainter(AppIconResource.PlayerEpisodes),
+            put(
+                PlayerBarAction.Episodes,
+                PlayerControlAction(
+                    stringResource(Res.string.compose_player_episodes), it,
+                    painter = appIconPainter(AppIconResource.PlayerEpisodes),
+                ),
             )
-        },
+        }
         onRateClick?.let {
-            PlayerControlAction(
-                userRating?.let { rating -> stringResource(Res.string.user_rating_action_rated, rating) }
-                    ?: stringResource(Res.string.user_rating_action_rate),
-                it,
-                icon = if (userRating != null) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+            put(
+                PlayerBarAction.Rate,
+                PlayerControlAction(
+                    userRating?.let { rating -> stringResource(Res.string.user_rating_action_rated, rating) }
+                        ?: stringResource(Res.string.user_rating_action_rate),
+                    it,
+                    icon = if (userRating != null) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                ),
             )
-        },
+        }
         onOpenInExternalPlayer?.let {
-            PlayerControlAction(
-                stringResource(Res.string.streams_open_external_player), it,
-                icon = Icons.AutoMirrored.Rounded.OpenInNew,
+            put(
+                PlayerBarAction.ExternalPlayer,
+                PlayerControlAction(
+                    stringResource(Res.string.streams_open_external_player), it,
+                    icon = Icons.AutoMirrored.Rounded.OpenInNew,
+                ),
             )
-        },
+        }
         onInfoClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.compose_player_playback_info), it,
-                icon = Icons.Rounded.Info,
+            put(
+                PlayerBarAction.PlaybackInfo,
+                PlayerControlAction(stringResource(Res.string.compose_player_playback_info), it, icon = Icons.Rounded.Info),
             )
-        },
-        onStreamInfoClick.takeIf { ShowUpstreamStreamInfoAction }?.let {
-            PlayerControlAction(
-                stringResource(Res.string.cd_stream_info), onStreamInfoClick,
-                icon = Icons.Rounded.Info,
-            )
-        },
+        }
         onSwitchEngineClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.cd_switch_player_engine), it,
-                icon = Icons.Rounded.SwapHoriz,
+            put(
+                PlayerBarAction.SwitchEngine,
+                PlayerControlAction(stringResource(Res.string.cd_switch_player_engine), it, icon = Icons.Rounded.SwapHoriz),
             )
-        },
+        }
         onVideoSettingsClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.player_action_video_settings), it,
-                icon = Icons.Rounded.Build,
+            put(
+                PlayerBarAction.VideoSettings,
+                PlayerControlAction(stringResource(Res.string.player_action_video_settings), it, icon = Icons.Rounded.Build),
             )
-        },
+        }
         onSubmitIntroClick?.let {
-            PlayerControlAction(
-                stringResource(Res.string.submit_intro_action), it,
-                icon = Icons.Rounded.Flag,
+            put(
+                PlayerBarAction.SubmitIntro,
+                PlayerControlAction(stringResource(Res.string.submit_intro_action), it, icon = Icons.Rounded.Flag),
             )
-        },
-    )
+        }
+    }
+    val orderedActions = actionOrder.mapNotNull { available[it] }
+    val primaryActions = if (alwaysExpanded) orderedActions else orderedActions.take(PlayerBarCollapsedActionCount)
+    val secondaryActions = if (alwaysExpanded) emptyList() else orderedActions.drop(PlayerBarCollapsedActionCount)
     val hasOverflow = secondaryActions.isNotEmpty()
     var expanded by remember(hasOverflow) { mutableStateOf(false) }
     val scrollState = rememberScrollState()
@@ -277,16 +319,19 @@ internal fun PlayerControlActions(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     (if (expanded) primaryActions + secondaryActions else primaryActions).forEach { action ->
-                        PlayerAction(
-                            description = action.description,
-                            onClick = {
-                                onInteraction()
-                                action.onClick()
-                            },
-                            icon = action.icon,
-                            painter = action.painter,
-                            iconSize = action.iconSize,
-                        )
+                        Box {
+                            PlayerAction(
+                                description = action.description,
+                                onClick = {
+                                    onInteraction()
+                                    action.onClick()
+                                },
+                                icon = action.icon,
+                                painter = action.painter,
+                                iconSize = action.iconSize,
+                            )
+                            action.popup?.invoke()
+                        }
                     }
                     if (hasOverflow) {
                         PlayerAction(
@@ -356,4 +401,5 @@ private data class PlayerControlAction(
     val icon: ImageVector? = null,
     val painter: Painter? = null,
     val iconSize: Dp = 24.dp,
+    val popup: (@Composable () -> Unit)? = null,
 )

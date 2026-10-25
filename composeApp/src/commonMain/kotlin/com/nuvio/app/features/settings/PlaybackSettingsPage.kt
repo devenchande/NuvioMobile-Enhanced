@@ -89,6 +89,7 @@ import com.nuvio.app.features.p2p.P2pTorrentProfile
 import com.nuvio.app.features.plugins.PluginsUiState
 import com.nuvio.app.features.plugins.PluginRepository
 import com.nuvio.app.features.streams.StreamAutoPlayMode
+import com.nuvio.app.features.streams.StreamBadgeSettingsRepository
 import com.nuvio.app.features.streams.StreamAutoPlaySource
 import com.nuvio.app.isIos
 import kotlinx.coroutines.Dispatchers
@@ -359,6 +360,8 @@ private fun PlaybackSettingsSection(
     var showDecoderPriorityDialog by remember { mutableStateOf(false) }
     var showHoldToSpeedValueDialog by remember { mutableStateOf(false) }
     var skipDirectionDialog by remember { mutableStateOf<Boolean?>(null) } // true = forward
+    var showArrangeBarDialog by remember { mutableStateOf(false) }
+    var showBadgeStyleDialog by remember { mutableStateOf(false) }
     var showIosAudioOutputDialog by remember { mutableStateOf(false) }
     var showIosHardwareDecoderDialog by remember { mutableStateOf(false) }
     var showIosTargetPrimariesDialog by remember { mutableStateOf(false) }
@@ -376,6 +379,10 @@ private fun PlaybackSettingsSection(
     var p2pCacheClearFailed by remember { mutableStateOf(false) }
     val pluginsEnabled = AppFeaturePolicy.pluginsEnabled
     val autoPlayPlayerSettings by PlayerSettingsRepository.uiState.collectAsStateWithLifecycle()
+    val streamBadgeSettings by remember {
+        StreamBadgeSettingsRepository.ensureLoaded()
+        StreamBadgeSettingsRepository.uiState
+    }.collectAsStateWithLifecycle()
     val p2pSettings by remember {
         P2pSettingsRepository.ensureLoaded()
         P2pSettingsRepository.uiState
@@ -530,6 +537,37 @@ private fun PlaybackSettingsSection(
                     enabled = !autoPlayPlayerSettings.externalPlayerEnabled,
                     isTablet = isTablet,
                     onCheckedChange = PlayerSettingsRepository::setGlassEffectEnabled,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_playback_bar_always_expanded),
+                    description = stringResource(Res.string.settings_playback_bar_always_expanded_description),
+                    checked = autoPlayPlayerSettings.bottomBarAlwaysExpanded,
+                    enabled = !autoPlayPlayerSettings.externalPlayerEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = PlayerSettingsRepository::setBottomBarAlwaysExpanded,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_playback_bar_arrange),
+                    description = stringResource(Res.string.settings_playback_bar_arrange_description),
+                    enabled = !autoPlayPlayerSettings.externalPlayerEnabled,
+                    isTablet = isTablet,
+                    onClick = { showArrangeBarDialog = true },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_playback_badge_style),
+                    description = stringResource(
+                        if (streamBadgeSettings.showInPlayer) {
+                            Res.string.settings_playback_badge_style_fusion
+                        } else {
+                            Res.string.settings_playback_badge_style_chips
+                        },
+                    ),
+                    enabled = !autoPlayPlayerSettings.externalPlayerEnabled,
+                    isTablet = isTablet,
+                    onClick = { showBadgeStyleDialog = true },
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsSwitchRow(
@@ -1894,6 +1932,29 @@ private fun PlaybackSettingsSection(
                 showLibmpvVideoOutputDialog = false
             },
             onDismiss = { showLibmpvVideoOutputDialog = false },
+        )
+    }
+
+    if (showArrangeBarDialog) {
+        ArrangePlayerBarDialog(
+            currentOrder = autoPlayPlayerSettings.bottomBarActionOrder,
+            onSave = { order ->
+                PlayerSettingsRepository.setBottomBarActionOrder(order)
+                showArrangeBarDialog = false
+            },
+            onDismiss = { showArrangeBarDialog = false },
+        )
+    }
+
+    if (showBadgeStyleDialog) {
+        PlayerBadgeStyleDialog(
+            useFusionBadges = streamBadgeSettings.showInPlayer,
+            onSelected = { useFusion ->
+                // Same switch as Streams > Fusion Style > Show in player.
+                StreamBadgeSettingsRepository.setShowInPlayer(useFusion)
+                showBadgeStyleDialog = false
+            },
+            onDismiss = { showBadgeStyleDialog = false },
         )
     }
 

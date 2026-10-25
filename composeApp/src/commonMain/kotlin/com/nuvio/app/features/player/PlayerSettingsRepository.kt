@@ -47,6 +47,8 @@ data class PlayerSettingsUiState(
     val swipeToSeekEnabled: Boolean = true,
     val seekPreviewEnabled: Boolean = true,
     val glassEffectEnabled: Boolean = true,
+    val bottomBarAlwaysExpanded: Boolean = false,
+    val bottomBarActionOrder: List<PlayerBarAction> = PlayerBarAction.defaultOrder,
     val movieRecommendationsEnabled: Boolean = true,
     val autoShowSubtitlesOnRewindEnabled: Boolean = true,
     val autoShowSubtitlesOnMuteEnabled: Boolean = true,
@@ -141,6 +143,8 @@ object PlayerSettingsRepository {
     private var swipeToSeekEnabled = true
     private var seekPreviewEnabled = true
     private var glassEffectEnabled = true
+    private var bottomBarAlwaysExpanded = false
+    private var bottomBarActionOrder = PlayerBarAction.defaultOrder
     private var movieRecommendationsEnabled = true
     private var autoShowSubtitlesOnRewindEnabled = true
     private var autoShowSubtitlesOnMuteEnabled = true
@@ -240,6 +244,8 @@ object PlayerSettingsRepository {
         swipeToSeekEnabled = true
         seekPreviewEnabled = true
         glassEffectEnabled = true
+        bottomBarAlwaysExpanded = false
+        bottomBarActionOrder = PlayerBarAction.defaultOrder
         movieRecommendationsEnabled = true
         autoShowSubtitlesOnRewindEnabled = true
         autoShowSubtitlesOnMuteEnabled = true
@@ -334,6 +340,8 @@ object PlayerSettingsRepository {
         swipeToSeekEnabled = PlayerSettingsStorage.loadSwipeToSeekEnabled() ?: true
         seekPreviewEnabled = PlayerSettingsStorage.loadSeekPreviewEnabled() ?: true
         glassEffectEnabled = PlayerSettingsStorage.loadGlassEffectEnabled() ?: true
+        bottomBarAlwaysExpanded = PlayerSettingsStorage.loadBottomBarAlwaysExpanded() ?: false
+        bottomBarActionOrder = PlayerBarAction.decodeOrder(PlayerSettingsStorage.loadBottomBarActionOrder())
         movieRecommendationsEnabled = PlayerSettingsStorage.loadMovieRecommendationsEnabled() ?: true
         autoShowSubtitlesOnRewindEnabled = PlayerSettingsStorage.loadAutoShowSubtitlesOnRewindEnabled() ?: true
         autoShowSubtitlesOnMuteEnabled = PlayerSettingsStorage.loadAutoShowSubtitlesOnMuteEnabled() ?: true
@@ -601,6 +609,23 @@ object PlayerSettingsRepository {
         glassEffectEnabled = enabled
         publish()
         PlayerSettingsStorage.saveGlassEffectEnabled(enabled)
+    }
+
+    fun setBottomBarAlwaysExpanded(enabled: Boolean) {
+        ensureLoaded()
+        if (bottomBarAlwaysExpanded == enabled) return
+        bottomBarAlwaysExpanded = enabled
+        publish()
+        PlayerSettingsStorage.saveBottomBarAlwaysExpanded(enabled)
+    }
+
+    fun setBottomBarActionOrder(order: List<PlayerBarAction>) {
+        ensureLoaded()
+        val normalized = PlayerBarAction.decodeOrder(PlayerBarAction.encodeOrder(order))
+        if (bottomBarActionOrder == normalized) return
+        bottomBarActionOrder = normalized
+        publish()
+        PlayerSettingsStorage.saveBottomBarActionOrder(PlayerBarAction.encodeOrder(normalized))
     }
 
     fun setMovieRecommendationsEnabled(enabled: Boolean) {
@@ -1281,6 +1306,8 @@ object PlayerSettingsRepository {
             swipeToSeekEnabled = swipeToSeekEnabled,
             seekPreviewEnabled = seekPreviewEnabled,
             glassEffectEnabled = glassEffectEnabled,
+            bottomBarAlwaysExpanded = bottomBarAlwaysExpanded,
+            bottomBarActionOrder = bottomBarActionOrder,
             movieRecommendationsEnabled = movieRecommendationsEnabled,
             autoShowSubtitlesOnRewindEnabled = autoShowSubtitlesOnRewindEnabled,
             autoShowSubtitlesOnMuteEnabled = autoShowSubtitlesOnMuteEnabled,

@@ -33,6 +33,10 @@ internal expect object PlayerSettingsStorage {
     fun saveSwipeToSeekEnabled(enabled: Boolean)
     fun loadGlassEffectEnabled(): Boolean?
     fun saveGlassEffectEnabled(enabled: Boolean)
+    fun loadBottomBarAlwaysExpanded(): Boolean?
+    fun saveBottomBarAlwaysExpanded(enabled: Boolean)
+    fun loadBottomBarActionOrder(): String?
+    fun saveBottomBarActionOrder(order: String)
     fun loadSeekPreviewEnabled(): Boolean?
     fun saveSeekPreviewEnabled(enabled: Boolean)
     fun loadMovieRecommendationsEnabled(): Boolean?

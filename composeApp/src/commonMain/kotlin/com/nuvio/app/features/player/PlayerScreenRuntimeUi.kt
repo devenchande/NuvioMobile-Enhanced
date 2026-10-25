@@ -463,6 +463,8 @@ private fun PlayerScreenRuntime.RenderPlayerControls(isEpisode: Boolean) {
             showRemainingTime = showRemainingTime,
             onRuntimeClick = { showRemainingTime = !showRemainingTime },
             qualityChips = playerQualityChips,
+            barActionOrder = playerSettingsUiState.bottomBarActionOrder,
+            barAlwaysExpanded = playerSettingsUiState.bottomBarAlwaysExpanded,
             badges = playerBadges,
             hideDetails = activeSkipInterval != null && !skipIntervalDismissed,
             onNextEpisodeClick = if (nextEpisodeInfo?.hasAired == true && !nextEpisodeAutoPlaySearching && nextEpisodeAutoPlayCountdown == null) {

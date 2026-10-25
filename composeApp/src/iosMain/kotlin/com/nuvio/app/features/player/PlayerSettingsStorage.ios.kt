@@ -32,6 +32,8 @@ actual object PlayerSettingsStorage {
     private const val touchGesturesEnabledKey = "touch_gestures_enabled"
     private const val swipeToSeekEnabledKey = "swipe_to_seek_enabled"
     private const val glassEffectEnabledKey = "player_glass_effect_enabled"
+    private const val bottomBarAlwaysExpandedKey = "player_bottom_bar_always_expanded"
+    private const val bottomBarActionOrderKey = "player_bottom_bar_action_order"
     private const val seekPreviewEnabledKey = "seek_preview_enabled"
     private const val movieRecommendationsEnabledKey = "movie_recommendations_enabled"
     private const val autoShowSubtitlesOnRewindEnabledKey = "auto_show_subtitles_on_rewind_enabled"
@@ -119,6 +121,9 @@ actual object PlayerSettingsStorage {
         holdToSpeedEnabledKey,
         holdToSpeedValueKey,
         touchGesturesEnabledKey,
+        glassEffectEnabledKey,
+        bottomBarAlwaysExpandedKey,
+        bottomBarActionOrderKey,
         externalPlayerEnabledKey,
         externalPlayerForwardSubtitlesKey,
         externalPlayerSendSkipSegmentsKey,
@@ -352,6 +357,19 @@ actual object PlayerSettingsStorage {
 
     actual fun saveGlassEffectEnabled(enabled: Boolean) {
         saveBoolean(glassEffectEnabledKey, enabled)
+    }
+
+    actual fun loadBottomBarAlwaysExpanded(): Boolean? = loadBoolean(bottomBarAlwaysExpandedKey)
+
+    actual fun saveBottomBarAlwaysExpanded(enabled: Boolean) {
+        saveBoolean(bottomBarAlwaysExpandedKey, enabled)
+    }
+
+    actual fun loadBottomBarActionOrder(): String? =
+        NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(bottomBarActionOrderKey))
+
+    actual fun saveBottomBarActionOrder(order: String) {
+        NSUserDefaults.standardUserDefaults.setObject(order, forKey = ProfileScopedKey.of(bottomBarActionOrderKey))
     }
 
     actual fun loadSeekPreviewEnabled(): Boolean? = loadBoolean(seekPreviewEnabledKey)
@@ -1190,6 +1208,8 @@ actual object PlayerSettingsStorage {
         loadTouchGesturesEnabled()?.let { put(touchGesturesEnabledKey, encodeSyncBoolean(it)) }
         loadSwipeToSeekEnabled()?.let { put(swipeToSeekEnabledKey, encodeSyncBoolean(it)) }
         loadGlassEffectEnabled()?.let { put(glassEffectEnabledKey, encodeSyncBoolean(it)) }
+        loadBottomBarAlwaysExpanded()?.let { put(bottomBarAlwaysExpandedKey, encodeSyncBoolean(it)) }
+        loadBottomBarActionOrder()?.let { put(bottomBarActionOrderKey, encodeSyncString(it)) }
         loadMovieRecommendationsEnabled()?.let { put(movieRecommendationsEnabledKey, encodeSyncBoolean(it)) }
         loadAutoShowSubtitlesOnRewindEnabled()?.let { put(autoShowSubtitlesOnRewindEnabledKey, encodeSyncBoolean(it)) }
         loadAutoShowSubtitlesOnMuteEnabled()?.let { put(autoShowSubtitlesOnMuteEnabledKey, encodeSyncBoolean(it)) }
@@ -1278,6 +1298,8 @@ actual object PlayerSettingsStorage {
         payload.decodeSyncBoolean(touchGesturesEnabledKey)?.let(::saveTouchGesturesEnabled)
         payload.decodeSyncBoolean(swipeToSeekEnabledKey)?.let(::saveSwipeToSeekEnabled)
         payload.decodeSyncBoolean(glassEffectEnabledKey)?.let(::saveGlassEffectEnabled)
+        payload.decodeSyncBoolean(bottomBarAlwaysExpandedKey)?.let(::saveBottomBarAlwaysExpanded)
+        payload.decodeSyncString(bottomBarActionOrderKey)?.let(::saveBottomBarActionOrder)
         payload.decodeSyncBoolean(movieRecommendationsEnabledKey)?.let(::saveMovieRecommendationsEnabled)
         payload.decodeSyncBoolean(autoShowSubtitlesOnRewindEnabledKey)?.let(::saveAutoShowSubtitlesOnRewindEnabled)
         payload.decodeSyncBoolean(autoShowSubtitlesOnMuteEnabledKey)?.let(::saveAutoShowSubtitlesOnMuteEnabled)

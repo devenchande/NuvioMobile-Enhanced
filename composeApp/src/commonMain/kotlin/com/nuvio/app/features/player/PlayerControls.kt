@@ -21,14 +21,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Groups
@@ -43,7 +41,6 @@ import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.material.icons.rounded.Replay30
@@ -121,6 +118,8 @@ internal fun PlayerControlsShell(
     onRuntimeClick: () -> Unit = {},
     qualityChips: List<String> = emptyList(),
     badges: List<StreamBadge> = emptyList(),
+    barActionOrder: List<PlayerBarAction> = PlayerBarAction.defaultOrder,
+    barAlwaysExpanded: Boolean = false,
     hideDetails: Boolean = false,
     onNextEpisodeClick: (() -> Unit)? = null,
     onInteraction: () -> Unit = {},
@@ -309,19 +308,6 @@ internal fun PlayerControlsShell(
                 )
             }
 
-            if (showPlaybackControls && !useLegacyLayout && onSpeedClick != null) {
-                PlayerSpeedRail(
-                    speed = playbackSnapshot.playbackSpeed,
-                    onSpeedSelected = { speed ->
-                        onInteraction()
-                        onSpeedSelected(speed)
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(horizontal = metrics.horizontalPadding),
-                )
-            }
-
             if (showPlaybackControls && useLegacyLayout) {
                 ProgressControls(
                     playbackSnapshot = playbackSnapshot,
@@ -426,6 +412,10 @@ internal fun PlayerControlsShell(
                         onEpisodesClick = onEpisodesClick,
                         onChaptersClick = onChaptersClick,
                         onNextEpisodeClick = onNextEpisodeClick,
+                        onSpeedClick = onSpeedClick,
+                        speedPickerVisible = speedPickerVisible,
+                        onSpeedSelected = onSpeedSelected,
+                        onSpeedPickerDismiss = onSpeedPickerDismiss,
                         onResizeModeClick = onResizeModeClick,
                         onVideoSettingsClick = onVideoSettingsClick,
                         onOpenInExternalPlayer = onOpenInExternalPlayer,
@@ -437,6 +427,8 @@ internal fun PlayerControlsShell(
                         onInfoClick = onInfoClick,
                         onRateClick = onRateClick,
                         userRating = userRating,
+                        actionOrder = barActionOrder,
+                        alwaysExpanded = barAlwaysExpanded,
                         onInteraction = onInteraction,
                     )
                 }
@@ -783,87 +775,6 @@ private fun PlainPlayPauseButton(
             )
         }
     }
-}
-
-/** Vertical +/speed/- rail on the middle-left edge; tapping the value resets to 1.0x. */
-@Composable
-private fun PlayerSpeedRail(
-    speed: Float,
-    onSpeedSelected: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val faster = PlayerPlaybackSpeedOptions.firstOrNull { it > speed + 0.01f }
-    val slower = PlayerPlaybackSpeedOptions.lastOrNull { it < speed - 0.01f }
-    Column(
-        modifier = modifier
-            .width(48.dp)
-            .playerLiquidGlass(
-                shape = PlayerGlassCapsule,
-                refractionHeight = 8.dp,
-                refractionAmount = 12.dp,
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        PlayerSpeedRailButton(
-            icon = Icons.Rounded.Add,
-            contentDescription = stringResource(Res.string.compose_player_speed_increase),
-            enabled = faster != null,
-            onClick = { faster?.let(onSpeedSelected) },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(36.dp)
-                .clickable(
-                    role = Role.Button,
-                    onClickLabel = stringResource(Res.string.compose_player_speed),
-                    onClick = { onSpeedSelected(1f) },
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = formatPlayerSpeedRailLabel(speed),
-                style = MaterialTheme.nuvioTypeScale.labelSm.copy(fontWeight = FontWeight.SemiBold),
-                color = Color.White,
-                maxLines = 1,
-                softWrap = false,
-            )
-        }
-        PlayerSpeedRailButton(
-            icon = Icons.Rounded.Remove,
-            contentDescription = stringResource(Res.string.compose_player_speed_decrease),
-            enabled = slower != null,
-            onClick = { slower?.let(onSpeedSelected) },
-        )
-    }
-}
-
-@Composable
-private fun PlayerSpeedRailButton(
-    icon: ImageVector,
-    contentDescription: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = Color.White.copy(alpha = if (enabled) 1f else 0.35f),
-            modifier = Modifier.size(22.dp),
-        )
-    }
-}
-
-/** Always shows one decimal ("1.0x", "1.25x") to match the compact rail label. */
-internal fun formatPlayerSpeedRailLabel(speed: Float): String {
-    val label = formatPlaybackSpeedLabel(speed)
-    return if (label.contains('.')) label else label.replace("x", ".0x")
 }
 
 @Composable
