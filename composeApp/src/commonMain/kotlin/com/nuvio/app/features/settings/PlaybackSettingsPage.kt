@@ -417,6 +417,22 @@ private fun PlaybackSettingsSection(
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_playback_glass_effect),
+                    description = stringResource(Res.string.settings_playback_glass_effect_description),
+                    checked = autoPlayPlayerSettings.glassEffectEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = PlayerSettingsRepository::setGlassEffectEnabled,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_playback_show_skip_buttons),
+                    description = stringResource(Res.string.settings_playback_show_skip_buttons_description),
+                    checked = autoPlayPlayerSettings.showSkipButtons,
+                    isTablet = isTablet,
+                    onCheckedChange = PlayerSettingsRepository::setShowSkipButtons,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
                     title = stringResource(Res.string.settings_playback_show_loading_overlay),
                     description = stringResource(Res.string.settings_playback_show_loading_overlay_description),
                     checked = showLoadingOverlay,
