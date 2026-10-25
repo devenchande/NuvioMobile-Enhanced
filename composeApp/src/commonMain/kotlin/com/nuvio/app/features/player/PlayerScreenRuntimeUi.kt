@@ -488,6 +488,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(isEpisode: Boolean) {
             onSeekBack = { seekBy(-skipStepMs(PlayerSeekDirection.Backward)) },
             onSeekForward = { seekBy(skipStepMs(PlayerSeekDirection.Forward)) },
             skipBackwardSeconds = playerSettingsUiState.skipBackwardSeconds,
+            showSkipButtons = playerSettingsUiState.showSkipButtons,
             skipForwardSeconds = playerSettingsUiState.skipForwardSeconds,
             onResizeModeClick = { cycleResizeMode() },
             onSpeedClick = if (!isLiveTvPlayback) {

@@ -316,9 +316,20 @@ fun runtimeConfigBoolean(key: String, default: Boolean): Boolean =
         else -> default
     }
 
+if (runtimeConfigValue("NUVIO_SUPABASE_URL").isBlank() || runtimeConfigValue("NUVIO_SUPABASE_ANON_KEY").isBlank()) {
+    logger.warn(
+        "w: NUVIO_SUPABASE_URL / NUVIO_SUPABASE_ANON_KEY are not set (local.properties or environment). " +
+            "This build will have account sign-in disabled.",
+    )
+}
+
 val generateRuntimeConfigs = tasks.register<GenerateRuntimeConfigsTask>("generateRuntimeConfigs") {
     outputDir.set(generatedRuntimeConfigDir)
-    localPropertiesFile.set(rootProject.layout.projectDirectory.file("local.properties"))
+    // The input is optional: CI builds without the properties secret have no local.properties,
+    // and Gradle rejects an @InputFile that points at a missing file.
+    rootProject.file("local.properties").takeIf { it.exists() }?.let { file ->
+        localPropertiesFile.set(file)
+    }
     appVersionName.set(releaseAppVersionName)
     appVersionCode.set(releaseAppVersionCode)
     supabaseUrl.set(runtimeConfigValue("NUVIO_SUPABASE_URL"))

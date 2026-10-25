@@ -297,7 +297,7 @@ fun AuthScreen(
                         isLoading = isLoading,
                         authError = authError,
                         deviceLinkAuthState = deviceLinkAuthState,
-                        deviceLinkEnabled = serverConnectionState.activeServer.capabilities.tvLogin,
+                        deviceLinkEnabled = serverConnectionState.activeServer.capabilities.tvLogin && serverConnectionState.activeServer.isConfigured,
                         formPaneWidth = if (compactLargeScreen) 460.dp else formPaneWidth,
                         brandHorizontalPadding = brandHorizontalPadding,
                         formHorizontalPadding = formHorizontalPadding,
@@ -333,7 +333,7 @@ fun AuthScreen(
                         isLoading = isLoading,
                         authError = authError,
                         deviceLinkAuthState = deviceLinkAuthState,
-                        deviceLinkEnabled = serverConnectionState.activeServer.capabilities.tvLogin,
+                        deviceLinkEnabled = serverConnectionState.activeServer.capabilities.tvLogin && serverConnectionState.activeServer.isConfigured,
                         statusBarTop = statusBarTop,
                         onEmailChange = {
                             email = it

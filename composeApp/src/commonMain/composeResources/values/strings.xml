@@ -1993,6 +1993,7 @@
     <string name="app_brand_name">Nuvio</string>
     <string name="auth_account_deletion_failed">Account deletion failed</string>
     <string name="auth_sign_in_failed">Sign-in failed</string>
+    <string name="auth_backend_not_configured">Accounts aren't available in this build because no sync server is configured. You can continue without an account, or connect your own server.</string>
     <string name="auth_sign_out_failed">Sign-out failed</string>
     <string name="auth_sign_up_failed">Sign-up failed</string>
     <string name="catalog_load_failed">Unable to load catalog items.</string>
@@ -2691,6 +2692,10 @@
     <string name="layout_ratings_hide_unwatched">Hide Unwatched</string>
     <string name="settings_playback_legacy_layout">Legacy layout</string>
     <string name="settings_playback_legacy_layout_description">Use the original player controls.</string>
+    <string name="settings_playback_glass_effect">Glass Effect on Player Controls</string>
+    <string name="settings_playback_glass_effect_description">Show the translucent round and pill backgrounds behind player buttons. Turn off for plain icons.</string>
+    <string name="settings_playback_show_skip_buttons">Show Skip Buttons</string>
+    <string name="settings_playback_show_skip_buttons_description">Show the skip back and skip forward buttons next to play/pause. Double-tap seeking works either way.</string>
     <string name="compose_player_episode_code">S%1$d E%2$d</string>
     <string name="compose_player_more_actions">More controls</string>
     <string name="compose_player_fewer_actions">Fewer controls</string>

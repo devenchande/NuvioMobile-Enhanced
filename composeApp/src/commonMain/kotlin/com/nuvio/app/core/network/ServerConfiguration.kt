@@ -24,6 +24,13 @@ data class ServerConfiguration(
 
     val isPublicHost: Boolean
         get() = isPublicServerHost(backendUrl)
+
+    /**
+     * False when the build shipped without NUVIO_SUPABASE_URL / NUVIO_SUPABASE_ANON_KEY (e.g. a fork
+     * built without local.properties). Account features must not talk to the backend in that case.
+     */
+    val isConfigured: Boolean
+        get() = backendUrl.isNotBlank() && publishableKey.isNotBlank()
 }
 
 object ServerConfigurationRepository {

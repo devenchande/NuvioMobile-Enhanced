@@ -33,7 +33,7 @@ fun snapToAllowedTimeout(value: Int): Int {
 }
 
 data class PlayerSettingsUiState(
-    val useLegacyPlayerLayout: Boolean = false,
+    val useLegacyPlayerLayout: Boolean = true,
     val showLoadingOverlay: Boolean = true,
     val showPlayerLoadingStatus: Boolean = true,
     val pauseOverlayEnabled: Boolean = true,
@@ -45,6 +45,8 @@ data class PlayerSettingsUiState(
     val skipForwardSeconds: Int = PLAYER_SKIP_SECONDS_DEFAULT,
     val touchGesturesEnabled: Boolean = true,
     val swipeToSeekEnabled: Boolean = true,
+    val glassEffectEnabled: Boolean = true,
+    val showSkipButtons: Boolean = false,
     val seekPreviewEnabled: Boolean = true,
     val movieRecommendationsEnabled: Boolean = true,
     val autoShowSubtitlesOnRewindEnabled: Boolean = true,
@@ -127,7 +129,7 @@ object PlayerSettingsRepository {
     val uiState: StateFlow<PlayerSettingsUiState> = _uiState.asStateFlow()
 
     private var hasLoaded = false
-    private var useLegacyPlayerLayout = false
+    private var useLegacyPlayerLayout = true
     private var showLoadingOverlay = true
     private var showPlayerLoadingStatus = true
     private var pauseOverlayEnabled = true
@@ -139,6 +141,8 @@ object PlayerSettingsRepository {
     private var skipForwardSeconds = PLAYER_SKIP_SECONDS_DEFAULT
     private var touchGesturesEnabled = true
     private var swipeToSeekEnabled = true
+    private var glassEffectEnabled = true
+    private var showSkipButtons = false
     private var seekPreviewEnabled = true
     private var movieRecommendationsEnabled = true
     private var autoShowSubtitlesOnRewindEnabled = true
@@ -226,7 +230,7 @@ object PlayerSettingsRepository {
 
     fun clearLocalState() {
         hasLoaded = false
-        useLegacyPlayerLayout = false
+        useLegacyPlayerLayout = true
         showLoadingOverlay = true
         showPlayerLoadingStatus = true
         pauseOverlayEnabled = true
@@ -238,6 +242,8 @@ object PlayerSettingsRepository {
         skipForwardSeconds = PLAYER_SKIP_SECONDS_DEFAULT
         touchGesturesEnabled = true
         swipeToSeekEnabled = true
+        glassEffectEnabled = true
+        showSkipButtons = false
         seekPreviewEnabled = true
         movieRecommendationsEnabled = true
         autoShowSubtitlesOnRewindEnabled = true
@@ -318,7 +324,7 @@ object PlayerSettingsRepository {
 
     private fun loadFromDisk() {
         hasLoaded = true
-        useLegacyPlayerLayout = PlayerSettingsStorage.loadUseLegacyPlayerLayout() ?: false
+        useLegacyPlayerLayout = PlayerSettingsStorage.loadUseLegacyPlayerLayout() ?: true
         showLoadingOverlay = PlayerSettingsStorage.loadShowLoadingOverlay() ?: true
         showPlayerLoadingStatus = PlayerSettingsStorage.loadShowPlayerLoadingStatus() ?: true
         pauseOverlayEnabled = PlayerSettingsStorage.loadPauseOverlayEnabled() ?: true
@@ -332,6 +338,8 @@ object PlayerSettingsRepository {
         skipForwardSeconds = normalizePlayerSkipSeconds(PlayerSettingsStorage.loadSkipForwardSeconds())
         touchGesturesEnabled = PlayerSettingsStorage.loadTouchGesturesEnabled() ?: true
         swipeToSeekEnabled = PlayerSettingsStorage.loadSwipeToSeekEnabled() ?: true
+        glassEffectEnabled = PlayerSettingsStorage.loadGlassEffectEnabled() ?: true
+        showSkipButtons = PlayerSettingsStorage.loadShowSkipButtons() ?: false
         seekPreviewEnabled = PlayerSettingsStorage.loadSeekPreviewEnabled() ?: true
         movieRecommendationsEnabled = PlayerSettingsStorage.loadMovieRecommendationsEnabled() ?: true
         autoShowSubtitlesOnRewindEnabled = PlayerSettingsStorage.loadAutoShowSubtitlesOnRewindEnabled() ?: true
@@ -585,6 +593,22 @@ object PlayerSettingsRepository {
         swipeToSeekEnabled = enabled
         publish()
         PlayerSettingsStorage.saveSwipeToSeekEnabled(enabled)
+    }
+
+    fun setGlassEffectEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (glassEffectEnabled == enabled) return
+        glassEffectEnabled = enabled
+        publish()
+        PlayerSettingsStorage.saveGlassEffectEnabled(enabled)
+    }
+
+    fun setShowSkipButtons(enabled: Boolean) {
+        ensureLoaded()
+        if (showSkipButtons == enabled) return
+        showSkipButtons = enabled
+        publish()
+        PlayerSettingsStorage.saveShowSkipButtons(enabled)
     }
 
     fun setSeekPreviewEnabled(enabled: Boolean) {
@@ -1279,6 +1303,8 @@ object PlayerSettingsRepository {
             skipForwardSeconds = skipForwardSeconds,
             touchGesturesEnabled = touchGesturesEnabled,
             swipeToSeekEnabled = swipeToSeekEnabled,
+            glassEffectEnabled = glassEffectEnabled,
+            showSkipButtons = showSkipButtons,
             seekPreviewEnabled = seekPreviewEnabled,
             movieRecommendationsEnabled = movieRecommendationsEnabled,
             autoShowSubtitlesOnRewindEnabled = autoShowSubtitlesOnRewindEnabled,

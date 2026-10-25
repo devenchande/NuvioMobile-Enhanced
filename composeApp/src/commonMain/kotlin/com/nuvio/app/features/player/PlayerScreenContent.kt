@@ -183,8 +183,12 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
         }
         runtime.BindMiniPlayerEffects(miniPresentation)
         runtime.BindPlayerRuntimeEffects()
+        val glassEnabled = playerSettingsUiState.glassEffectEnabled
         CompositionLocalProvider(
-            LocalLiquidGlassBackdrop provides rememberVideoFrameBackdrop(enabled = !runtime.isMiniPresentation && isLiquidGlassSupported()),
+            LocalLiquidGlassBackdrop provides rememberVideoFrameBackdrop(
+                enabled = !runtime.isMiniPresentation && glassEnabled && isLiquidGlassSupported(),
+            ),
+            LocalPlayerGlassEnabled provides glassEnabled,
         ) {
             runtime.RenderPlayerRuntimeUi()
         }

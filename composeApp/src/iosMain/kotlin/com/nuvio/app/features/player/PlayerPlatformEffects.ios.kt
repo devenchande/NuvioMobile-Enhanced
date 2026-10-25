@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSNotificationCenter
 import platform.MediaPlayer.MPVolumeView
 import platform.UIKit.UIApplication
@@ -103,7 +105,9 @@ internal actual fun rememberPlatformPlayerGestureController(): PlayerGestureCont
     val controller = remember { IOSPlayerGestureController() }
 
     DisposableEffect(controller) {
+        controller.attachVolumeView()
         onDispose {
+            controller.detachVolumeView()
             controller.restoreBrightness()
         }
     }
@@ -111,10 +115,13 @@ internal actual fun rememberPlatformPlayerGestureController(): PlayerGestureCont
     return controller
 }
 
+@OptIn(ExperimentalForeignApi::class)
 private class IOSPlayerGestureController : PlayerGestureController {
-    private val volumeView = MPVolumeView().apply {
-        hidden = true
+    // iOS hides its own volume HUD only while an MPVolumeView is in the window and not hidden,
+    // so the view is attached off-screen and nearly transparent instead of `hidden = true`.
+    private val volumeView = MPVolumeView(frame = CGRectMake(-2000.0, -2000.0, 1.0, 1.0)).apply {
         alpha = 0.01
+        userInteractionEnabled = false
     }
     private val originalBrightness = UIScreen.mainScreen.brightness
     private var brightnessRestored = false
@@ -147,6 +154,15 @@ private class IOSPlayerGestureController : PlayerGestureController {
             fraction = target,
             isMuted = target <= 0.001f,
         )
+    }
+
+    fun attachVolumeView() {
+        if (volumeView.superview != null) return
+        UIApplication.sharedApplication.keyWindow?.addSubview(volumeView)
+    }
+
+    fun detachVolumeView() {
+        volumeView.removeFromSuperview()
     }
 
     fun restoreBrightness() {

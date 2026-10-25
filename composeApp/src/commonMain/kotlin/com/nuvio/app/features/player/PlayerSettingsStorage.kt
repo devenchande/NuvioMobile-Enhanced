@@ -30,6 +30,10 @@ internal expect object PlayerSettingsStorage {
     fun loadTouchGesturesEnabled(): Boolean?
     fun saveTouchGesturesEnabled(enabled: Boolean)
     fun loadSwipeToSeekEnabled(): Boolean?
+    fun loadGlassEffectEnabled(): Boolean?
+    fun saveGlassEffectEnabled(enabled: Boolean)
+    fun loadShowSkipButtons(): Boolean?
+    fun saveShowSkipButtons(enabled: Boolean)
     fun saveSwipeToSeekEnabled(enabled: Boolean)
     fun loadSeekPreviewEnabled(): Boolean?
     fun saveSeekPreviewEnabled(enabled: Boolean)
